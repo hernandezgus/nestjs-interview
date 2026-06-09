@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TodoListsController } from './todo_lists.controller';
-import { TodoListsService } from './todo_lists.service';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { TodoListsController } from './todo_lists.controller';
 import { TodoList } from './todo_list.entity';
+import { TodoListsService } from './todo_lists.service';
 
 describe('TodoListsController', () => {
   let app: INestApplication;
@@ -59,8 +59,16 @@ describe('TodoListsController', () => {
     it('should return a single todo list by id', async () => {
       const mockTodoList = { id: 1, name: 'Shopping List' };
       todoListRepositoryMock.findOneBy.mockResolvedValue(mockTodoList);
-      const result = await todoListsController.show({ todoListId: 1 });
+      const result = await todoListsController.show(1);
       expect(result).toEqual(mockTodoList);
+    });
+
+    it('should throw when a todo list is not found', async () => {
+      todoListRepositoryMock.findOneBy.mockResolvedValue(null);
+
+      await expect(todoListsController.show(999)).rejects.toThrow(
+        new NotFoundException('Todo list 999 not found'),
+      );
     });
   });
 
@@ -87,20 +95,34 @@ describe('TodoListsController', () => {
       todoListRepositoryMock.findOneBy.mockResolvedValue(existingTodoList);
       todoListRepositoryMock.save.mockResolvedValue(updatedTodoList);
 
-      const result = await todoListsController.update(
-        { todoListId: '1' },
-        updateDto,
-      );
+      const result = await todoListsController.update(1, updateDto);
 
       expect(result).toEqual(updatedTodoList);
+    });
+
+    it('should throw when updating a missing todo list', async () => {
+      const updateDto = { name: 'Updated List' };
+      todoListRepositoryMock.findOneBy.mockResolvedValue(null);
+
+      await expect(todoListsController.update(999, updateDto)).rejects.toThrow(
+        new NotFoundException('Todo list 999 not found'),
+      );
     });
   });
 
   describe('delete', () => {
     it('should delete a todo list', async () => {
       todoListRepositoryMock.delete.mockResolvedValue({ affected: 1 });
-      await todoListsController.delete({ todoListId: 1 });
+      await todoListsController.delete(1);
       expect(todoListRepositoryMock.delete).toHaveBeenCalledWith(1);
+    });
+
+    it('should throw when deleting a missing todo list', async () => {
+      todoListRepositoryMock.delete.mockResolvedValue({ affected: 0 });
+
+      await expect(todoListsController.delete(999)).rejects.toThrow(
+        new NotFoundException('Todo list 999 not found'),
+      );
     });
   });
 });
