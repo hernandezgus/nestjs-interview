@@ -55,3 +55,27 @@ Implemented request validation and explicit error handling to improve API reliab
 - Add global exception filter for consistent error format
 - Introduce request/response logging tied to validation errors
 
+## Increment 2 — Request Logging
+
+### Decision
+Implemented a global logging interceptor to track all HTTP requests.
+
+### Changes
+- Created LoggingInterceptor
+- Logs request start, response, execution time, and errors
+- Applied globally in main.ts
+
+### Rationale
+- Provides centralized observability without polluting business logic
+- Improves debugging and monitoring capabilities
+- Follows NestJS best practices (interceptors for cross-cutting concerns)
+
+### Trade-offs
+- Not using structured JSON logging yet
+- No correlation IDs implemented
+- Using built-in Logger instead of external libraries
+
+### Future Improvements
+- Add correlation IDs for distributed tracing
+- Integrate structured logging (e.g., Winston, Pino)
+- Send logs to external systems
