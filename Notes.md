@@ -79,3 +79,56 @@ Implemented a global logging interceptor to track all HTTP requests.
 - Add correlation IDs for distributed tracing
 - Integrate structured logging (e.g., Winston, Pino)
 - Send logs to external systems
+
+## Increment 3 — JWT Authentication
+
+### Decision
+Implemented JWT-based authentication using Passport strategy.
+
+### Changes
+- Created AuthModule with login endpoint
+- Added JWT strategy and guard
+- Protected TodoLists endpoints
+- Used a hardcoded user for authentication
+
+### Rationale
+- Enables secure API access with minimal implementation
+- Keeps system stateless and easy to integrate with frontend
+- Leaves room for future user management extension
+
+### Trade-offs
+- No persistent user storage
+- No role-based access control
+- Simple credential validation
+
+### Future Improvements
+- Add user entity and persistence
+- Implement roles/permissions
+- Add refresh tokens
+
+## Increment 4 — TodoItems Domain
+
+### Decision
+Extended TodoList domain to include TodoItems with a one-to-many relationship.
+
+### Changes
+- Created TodoItem entity
+- Added OneToMany / ManyToOne relationship
+- Enabled cascade operations
+- Updated DTOs to support nested creation
+- Implemented nested validation
+
+### Rationale
+- Enables creating full TodoLists with items in a single request
+- Aligns with requirement of managing lists and items together
+- Keeps implementation simple and efficient for current scope
+
+### Trade-offs
+- Using eager loading simplifies implementation but may impact performance at scale
+- Update strategy replaces items instead of diffing changes
+
+### Future Improvements
+- Optimize loading strategy (lazy loading or query builder)
+- Implement partial updates for items
+- Introduce transactions for complex updates
+
