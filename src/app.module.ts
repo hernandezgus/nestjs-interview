@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from './auth/auth.module';
 import { TodoListsModule } from './todo_lists/todo_lists.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TodoList } from './todo_lists/todo_list.entity';
 
 @Module({
   imports: [
+    AuthModule,
     TodoListsModule,
     TypeOrmModule.forRoot({
       type: 'postgres',

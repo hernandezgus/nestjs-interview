@@ -7,13 +7,16 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateTodoListDto } from './dtos/create-todo_list';
 import { UpdateTodoListDto } from './dtos/update-todo_list';
 import { TodoList } from '../interfaces/todo_list.interface';
 import { TodoListsService } from './todo_lists.service';
 
 @Controller('api/todolists')
+@UseGuards(JwtAuthGuard)
 export class TodoListsController {
   constructor(private todoListsService: TodoListsService) {}
 
