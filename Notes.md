@@ -183,3 +183,26 @@ Expanded UI to support full CRUD operations for TodoLists and TodoItems.
 - Add better state synchronization (React Query)
 - Improve UI interactions and animations
 - Add filtering and sorting
+
+## Increment 6.1 — Sync Improvements
+
+### Enhancements
+- Added retry mechanism
+- Added result reporting (created/failed)
+- Introduced scheduled sync (cron)
+- Added UI integration for manual sync
+
+### Rationale
+- Improves reliability and observability
+- Enables operational control
+- Makes sync user-visible
+
+### Trade-offs
+- Basic retry only (no exponential backoff)
+- Cron not distributed-safe
+- No queue system
+
+### Future Improvements
+- Introduce job queue (BullMQ)
+- Add exponential retry
+- Add sync audit logs
