@@ -1,14 +1,23 @@
 # Full-Stack Todo Sync Application
 
-This repository contains a full-stack Todo application with a NestJS backend, a React + Vite frontend, PostgreSQL persistence, JWT authentication, and synchronization to an external Todo API.
+This repository contains a full-stack Todo application with a NestJS backend, a React + Vite frontend, PostgreSQL persistence, JWT authentication, and synchronization with an external Todo service.
 
 ## Project Overview
 
-The application allows users to manage TodoLists and nested TodoItems through a protected frontend. It also supports synchronization with an external Todo service, including:
+The application allows users to manage TodoLists and nested TodoItems through a protected frontend. It also supports synchronization with an external Todo API, including:
 
-- Todo management with create, read, update, and delete operations
-- External API synchronization for importing missing lists
-- Full-stack architecture with separate backend and frontend projects
+- TodoList and TodoItem CRUD operations
+- JWT-based authentication for protected Todo endpoints
+- Bidirectional sync between local state and an external Todo service
+- Scheduled background sync every 5 minutes
+- Retry support for transient local and external failures
+
+## Notes
+
+- Login with `admin` / `password` at `POST /auth/login`
+- Protected Todo routes are under `/api/todolists`
+- Manual sync is available at `POST /api/todolists/sync`
+- External API URL uses `EXTERNAL_API_URL` or defaults to `http://localhost:3001`
 
 ## Tech Stack
 
@@ -19,56 +28,12 @@ The application allows users to manage TodoLists and nested TodoItems through a 
 
 ## Features
 
-### Core features
-
-- Manage TodoLists and nested TodoItems
-- Create TodoLists with items
-- Update list names and item state
-- Delete lists and items
-
-### Authentication
-
-- JWT-based login
-- Protected Todo API routes under `/api/todolists`
-
-### Observability
-
-- Backend request logging
-- Input validation on DTOs
-- Error handling and structured responses
-
-### Sync
-
-- Manual sync via `/api/todolists/sync`
-- Scheduled sync using cron every 5 minutes
-- Retry support for local create operations
-- Sync status reported back to the client
-
-## Architecture Overview
-
-### Backend structure
-
-- `nestjs-interview/src/app.module.ts` - application bootstrapping and database configuration
-- `nestjs-interview/src/auth` - authentication module, JWT login, validation
-- `nestjs-interview/src/todo_lists` - domain module for TodoLists and TodoItems
-- `nestjs-interview/src/todo_lists/todo_sync.service.ts` - synchronization logic
-- `nestjs-interview/src/todo_lists/external_todo_api.service.ts` - external API client
-
-### Frontend structure
-
-- `react-interview/src/pages/TodoListsPage.tsx` - main page with Todo list UI and sync control
-- `react-interview/src/components` - reusable UI components for Todo list forms and cards
-- `react-interview/src/hooks/useTodoLists.ts` - state management and API interaction
-- `react-interview/src/api/todoLists.ts` - Todo API client, including sync endpoint
-
-### Sync design
-
-Sync is implemented as a bidirectional, best-effort synchronization:
-
-- External → Local: imports missing lists and items
-- Local → External: propagates new and updated data
-
-Due to external API limitations (no shared IDs, no timestamps), matching is performed by name and may not be perfectly consistent.
+- Manage TodoLists with nested TodoItems
+- Create, update, and delete TodoLists and items
+- JWT login with protected `/api/todolists` routes
+- Manual sync via `POST /api/todolists/sync`
+- Scheduled cron sync every 5 minutes
+- Input validation and request logging on the backend
 
 ## Running the project
 
@@ -101,9 +66,18 @@ npm run dev
 
 The frontend runs on `http://localhost:5173`.
 
-## API usage
+## Testing
 
-### Login example
+From `nestjs-interview`:
+
+```bash
+npm run test
+npm run test:cov
+```
+
+## Authentication
+
+### Login endpoint
 
 Request:
 
@@ -112,12 +86,18 @@ POST /auth/login
 Content-Type: application/json
 
 {
-  "username": "user",
+  "username": "admin",
   "password": "password"
 }
 ```
 
-Response contains a JWT token.
+Response:
+
+```json
+{
+  "access_token": "<jwt>"
+}
+```
 
 ### Protected endpoints
 
@@ -127,67 +107,59 @@ Include the JWT in the `Authorization` header:
 Authorization: Bearer <token>
 ```
 
-Key Todo endpoints:
+## API Endpoints
 
 - `GET /api/todolists` - fetch all TodoLists
 - `POST /api/todolists` - create a new TodoList
 - `PUT /api/todolists/{todoListId}` - update a TodoList
 - `DELETE /api/todolists/{todoListId}` - delete a TodoList
+- `POST /api/todolists/sync` - trigger manual sync with the external Todo API
 
-### Sync endpoint
+## Sync behavior
 
-- `POST /api/todolists/sync` - trigger manual sync from the external Todo API
+The backend sync service performs two phases:
 
-Response includes:
+1. External → Local: fetch external TodoLists and create any missing local lists by name
+2. Local → External: create and update external lists/items for local data that does not already exist externally
+
+### Response format
+
+`POST /api/todolists/sync` returns:
 
 - `success` boolean
-- `created` count of new lists created
-- `failed` count of items that could not be created
-- optional `message`
+- `createdLocal` number of lists imported from external service
+- `createdExternal` number of lists/items created in the external service
+- `updatedExternal` number of external lists/items updated to match local data
+- `failed` number of operations that failed after two retry attempts
 
-## Sync explanation
+### Matching rules and limitations
 
-### How sync works
+- Lists are matched by `name`
+- Items are matched by external `description`
+- There is no stable cross-service ID mapping in the current implementation
+- Deletions are not reconciled across systems
+- The local frontend currently presents a simplified sync summary after the operation
 
-The backend sync service fetches TodoLists from the external API and compares them to local TodoLists by name. If an external list does not exist locally, it is created with its nested items.
+## External API configuration
 
-### Assumptions
+The external Todo API base URL is configured with `EXTERNAL_API_URL`. If that environment variable is not set, the backend defaults to:
 
-- List `name` is used as the identifier for matching external and local TodoLists
-- Remote lists without matching local names are considered new
+```bash
+EXTERNAL_API_URL=http://localhost:3001
+```
 
-### Limitations
+> The external service is not included in this repository, so end-to-end sync requires a compatible external Todo API.
 
-- No stable external ID mapping is available in the current sync implementation
-- Sync is one-way from external API to local database
-- The external API does not support incremental delta queries or full change tracking
-- Conflict resolution is intentionally simple to keep the implementation focused and maintainable
-- The frontend build may emit a Vite warning about chunks larger than 500 kB after minification; the build itself still succeeds and this is a known optimization area not addressed due to time constraints
-- The external service is expected to be available at `http://localhost:3001` and the implementation is based on the `challenge-senior-engineer` OpenAPI documentation, but no runnable external server is included in this repository and therefore the sync flow could not be end-to-end tested against a real external service. The sync behavior is covered by unit tests `should create local lists from external service` and `should propagate local list and item creation to external service`.
+## Important notes
 
-## AI-First Development Approach
+- Global validation is enabled in `src/main.ts` with `ValidationPipe`
+- Backend logging is enabled via `LoggingInterceptor`
+- Frontend API requests use a stored JWT token from local storage
 
-This repository was developed with iterative AI assistance. Each change was produced in small, testable increments, and the implementation was validated through code updates and compilation checks.
-
-The AI-assisted workflow included:
-
-- generating code for backend and frontend features
-- analyzing build and runtime issues
-- refining the sync design based on project constraints
-- ensuring the final implementation remained practical and maintainable
-
-Prompts were refined iteratively to focus on working code, clear logging, and minimal complexity.
-
-## Trade-offs
-
-- The sync design favors simplicity over full reconciliation logic
-- No advanced conflict resolution or bidirectional merge is implemented
-- Cron-based sync runs every 5 minutes, which is suitable for this challenge but not a production-grade queue-based system
-
-## Future Improvements
+## Future improvements
 
 - Add stable external IDs and timestamp-based change detection
 - Implement delta sync and two-way reconciliation
-- Introduce queue-based background processing for sync operations
-- Improve frontend sync UX with richer progress and status details
-- Harden error handling and retry policies for external API failures
+- Introduce queue-based background sync processing
+- Improve frontend sync UX with richer progress details
+- Harden error handling and retry policies

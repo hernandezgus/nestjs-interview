@@ -5,6 +5,7 @@ import { TodoItem } from './todo_item.entity';
 import { TodoListsController } from './todo_lists.controller';
 import { TodoList } from './todo_list.entity';
 import { TodoListsService } from './todo_lists.service';
+import { TodoSyncService } from './todo_sync.service';
 
 describe('TodoListsController', () => {
   let app: INestApplication;
@@ -35,6 +36,12 @@ describe('TodoListsController', () => {
         {
           provide: getRepositoryToken(TodoItem),
           useValue: todoItemRepositoryMock,
+        },
+        {
+          provide: TodoSyncService,
+          useValue: {
+            syncFromExternal: jest.fn(),
+          },
         },
       ],
     }).compile();
