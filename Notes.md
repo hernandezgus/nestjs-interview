@@ -157,3 +157,29 @@ Implemented a minimal but structured React frontend using MUI.
 - Add React Query for data fetching
 - Improve form handling
 - Add routing and navigation
+
+## Increment 5.1 — UI/UX Improvements and Full CRUD
+
+### Decision
+Expanded UI to support full CRUD operations for TodoLists and TodoItems.
+
+### Changes
+- Added edit and delete functionality for TodoLists
+- Added create, edit, delete, and toggle completion for TodoItems
+- Implemented inline editing
+- Improved visual feedback for completed items
+
+### Rationale
+- Completes the core user workflow
+- Improves usability and interaction efficiency
+- Ensures frontend fully exercises backend capabilities
+
+### Trade-offs
+- Basic UX (not polished)
+- No advanced state management
+- No optimistic updates in all cases
+
+### Future Improvements
+- Add better state synchronization (React Query)
+- Improve UI interactions and animations
+- Add filtering and sorting
