@@ -6,6 +6,9 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.enableCors({
+    origin: ['http://127.0.0.1:5173', 'http://localhost:5173'],
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

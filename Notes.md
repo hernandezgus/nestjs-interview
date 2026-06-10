@@ -132,3 +132,28 @@ Extended TodoList domain to include TodoItems with a one-to-many relationship.
 - Implement partial updates for items
 - Introduce transactions for complex updates
 
+## Increment 5 — Frontend Implementation
+
+### Decision
+Implemented a minimal but structured React frontend using MUI.
+
+### Changes
+- Created API abstraction layer
+- Implemented login flow with JWT storage
+- Built TodoLists UI with nested items
+- Organized code by feature
+
+### Rationale
+- Enables full-stack interaction with backend
+- Keeps structure scalable without over-engineering
+- Improves developer productivity with UI library
+
+### Trade-offs
+- No global state manager
+- Basic error handling only
+- Limited UI features
+
+### Future Improvements
+- Add React Query for data fetching
+- Improve form handling
+- Add routing and navigation
