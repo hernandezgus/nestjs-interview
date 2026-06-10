@@ -1,7 +1,9 @@
 version: '3.8'
 services:
   app:
-    image: mcr.microsoft.com/devcontainers/typescript-node:0-18     
+    build:
+      context: .
+      dockerfile: Dockerfile
     command: npm run start:dev
     working_dir: /workspaces/nestjs-interview
     restart: unless-stopped
