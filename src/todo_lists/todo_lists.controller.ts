@@ -4,17 +4,25 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateTodoListDto } from './dtos/create-todo_list';
 import { UpdateTodoListDto } from './dtos/update-todo_list';
 import { TodoList } from '../interfaces/todo_list.interface';
 import { TodoListsService } from './todo_lists.service';
+import { TodoSyncService } from './todo_sync.service';
 
 @Controller('api/todolists')
+@UseGuards(JwtAuthGuard)
 export class TodoListsController {
-  constructor(private todoListsService: TodoListsService) {}
+  constructor(
+    private todoListsService: TodoListsService,
+    private todoSyncService: TodoSyncService,
+  ) {}
 
   @Get()
   index(): Promise<TodoList[]> {
@@ -22,8 +30,10 @@ export class TodoListsController {
   }
 
   @Get('/:todoListId')
-  show(@Param() param: { todoListId: number }): Promise<TodoList | null> {
-    return this.todoListsService.get(param.todoListId);
+  show(
+    @Param('todoListId', ParseIntPipe) todoListId: number,
+  ): Promise<TodoList> {
+    return this.todoListsService.get(todoListId);
   }
 
   @Post()
@@ -31,16 +41,27 @@ export class TodoListsController {
     return this.todoListsService.create(dto);
   }
 
+  @Post('/sync')
+  async sync(): Promise<{
+    success: boolean;
+    createdLocal: number;
+    createdExternal: number;
+    updatedExternal: number;
+    failed: number;
+  }> {
+    return this.todoSyncService.syncFromExternal();
+  }
+
   @Put('/:todoListId')
   update(
-    @Param() param: { todoListId: string },
+    @Param('todoListId', ParseIntPipe) todoListId: number,
     @Body() dto: UpdateTodoListDto,
   ): Promise<TodoList> {
-    return this.todoListsService.update(Number(param.todoListId), dto);
+    return this.todoListsService.update(todoListId, dto);
   }
 
   @Delete('/:todoListId')
-  delete(@Param() param: { todoListId: number }): Promise<void> {
-    return this.todoListsService.delete(param.todoListId);
+  delete(@Param('todoListId', ParseIntPipe) todoListId: number): Promise<void> {
+    return this.todoListsService.delete(todoListId);
   }
 }

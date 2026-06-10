@@ -1,0 +1,39 @@
+{"role":"user","content":"Analyze this NestJS project and provide a structured summary of modules, flow, ORM usage, error handling, logging, tests, config, extension points and files to modify for JWT, logging and validation."}
+{"role":"user","content":"Analyze the Docker setup of this project including services, communication, env vars, build strategy and suggest improvements."}
+{"role":"user","content":"Analyze this React + Vite project and propose a scalable structure, libraries, API integration strategy and patterns for error handling and state."}
+
+{"role":"user","content":"Implement validation and error handling in NestJS using ValidationPipe, DTO decorators, ParseIntPipe and NotFoundException. Keep it simple and adjust tests."}
+
+{"role":"user","content":"Implement a NestJS logging interceptor that logs request start, response, duration, and errors. Apply it globally using Logger."}
+
+{"role":"user","content":"Implement JWT authentication in NestJS using AuthModule, JwtStrategy, AuthGuard, and a login endpoint with a hardcoded user and token generation."}
+
+{"role":"user","content":"Extend the domain to support TodoItems with a OneToMany relationship to TodoList, including DTO validation and nested creation logic."}
+
+{"role":"user","content":"Build a React + Vite frontend using Material UI with API integration, login handling, TodoLists view, and CRUD creation UI."}
+
+{"role":"user","content":"Extend the frontend to support full CRUD operations for TodoLists and TodoItems including edit, delete, and toggle completed state with a clean UX."}
+
+{"role":"user","content":"Analyze the external Todo API documentation and summarize data models, endpoints, limitations, and implications for synchronization."}
+
+{"role":"user","content":"Based on the external API and local system, propose a simple synchronization architecture including directions, reconciliation, error handling, and performance strategy."}
+
+{"role":"user","content":"Implement a sync mechanism in NestJS that pulls TodoLists from an external API and creates missing records locally with logging and error handling."}
+
+{"role":"user","content":"Fix sync error handling by wrapping external API calls in try/catch, logging failures, and returning safely without crashing."}
+
+{"role":"user","content":"Extend the sync implementation to include retry logic, result reporting (created, failed), and better logging output."}
+
+{"role":"user","content":"Add scheduled sync using @nestjs/schedule with a cron job executing every 5 minutes while keeping manual sync endpoint."}
+
+{"role":"user","content":"Add a frontend sync button that triggers /sync endpoint, shows loading state, and displays result using Material UI alerts or snackbar."}
+
+{"role":"user","content":"Ensure /sync endpoint always returns a consistent response format with success, createdLocal, createdExternal, updatedExternal, failed, including error scenarios."}
+
+{"role":"user","content":"Extend sync to support bidirectional synchronization: external to local and local to external, including create and update operations for lists and items with retry and logging."}
+
+{"role":"user","content":"Audit README.md against the codebase and fix inconsistencies. Ensure sync is described as bidirectional and add a Production Improvements section including ID mapping, timestamps, queues, and conflict resolution."}
+
+{"role":"user","content":"Generate a professional README.md describing architecture, features, sync strategy, trade-offs, and AI-first development approach."}
+
+{"role":"user","content":"Reconstruct all prompts used during development grouped by stages: backend setup, validation, logging, auth, domain, frontend, UI, and sync features."}
