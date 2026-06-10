@@ -14,11 +14,15 @@ import { CreateTodoListDto } from './dtos/create-todo_list';
 import { UpdateTodoListDto } from './dtos/update-todo_list';
 import { TodoList } from '../interfaces/todo_list.interface';
 import { TodoListsService } from './todo_lists.service';
+import { TodoSyncService } from './todo_sync.service';
 
 @Controller('api/todolists')
 @UseGuards(JwtAuthGuard)
 export class TodoListsController {
-  constructor(private todoListsService: TodoListsService) {}
+  constructor(
+    private todoListsService: TodoListsService,
+    private todoSyncService: TodoSyncService,
+  ) {}
 
   @Get()
   index(): Promise<TodoList[]> {
@@ -35,6 +39,11 @@ export class TodoListsController {
   @Post()
   create(@Body() dto: CreateTodoListDto): Promise<TodoList> {
     return this.todoListsService.create(dto);
+  }
+
+  @Post('/sync')
+  async sync(): Promise<void> {
+    await this.todoSyncService.syncFromExternal();
   }
 
   @Put('/:todoListId')
