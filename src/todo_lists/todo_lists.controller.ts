@@ -42,8 +42,14 @@ export class TodoListsController {
   }
 
   @Post('/sync')
-  async sync(): Promise<void> {
-    await this.todoSyncService.syncFromExternal();
+  async sync(): Promise<{
+    success: boolean;
+    createdLocal: number;
+    createdExternal: number;
+    updatedExternal: number;
+    failed: number;
+  }> {
+    return this.todoSyncService.syncFromExternal();
   }
 
   @Put('/:todoListId')
