@@ -15,4 +15,32 @@ export class ExternalTodoApiService {
     const response = await axios.post(`${this.baseUrl}/todolists`, data);
     return response.data;
   }
+
+  async updateTodoList(listId: string, data: any): Promise<any> {
+    const response = await axios.put(
+      `${this.baseUrl}/todolists/${listId}`,
+      data,
+    );
+    return response.data;
+  }
+
+  async createTodoItem(listId: string, item: any): Promise<any> {
+    const response = await axios.post(
+      `${this.baseUrl}/todolists/${listId}/items`,
+      item,
+    );
+    return response.data;
+  }
+
+  async updateTodoItem(
+    listId: string,
+    itemId: string,
+    item: any,
+  ): Promise<any> {
+    const response = await axios.put(
+      `${this.baseUrl}/todolists/${listId}/items/${itemId}`,
+      item,
+    );
+    return response.data;
+  }
 }

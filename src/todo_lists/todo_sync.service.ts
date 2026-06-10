@@ -26,7 +26,9 @@ export class TodoSyncService {
 
   async syncFromExternal(): Promise<{
     success: boolean;
-    created: number;
+    createdLocal: number;
+    createdExternal: number;
+    updatedExternal: number;
     failed: number;
     message?: string;
   }> {
@@ -42,7 +44,9 @@ export class TodoSyncService {
       );
       return {
         success: false,
-        created: 0,
+        createdLocal: 0,
+        createdExternal: 0,
+        updatedExternal: 0,
         failed: 0,
         message: 'External API unavailable',
       };
@@ -50,8 +54,10 @@ export class TodoSyncService {
 
     const localLists = await this.todoListRepository.find({ relations: ['items'] });
     const existingNames = new Set(localLists.map((list) => list.name));
-    let createdCount = 0;
-    let failedCount = 0;
+    let createdLocal = 0;
+    let createdExternal = 0;
+    let updatedExternal = 0;
+    let failed = 0;
 
     for (const externalList of externalLists ?? []) {
       if (!externalList || typeof externalList.name !== 'string') {
@@ -74,48 +80,179 @@ export class TodoSyncService {
           : [],
       });
 
-      const created = await this.tryCreateListWithRetry(todoList, externalList.name);
+      const created = await this.trySaveWithRetry(
+        () => this.todoListRepository.save(todoList),
+        `local list ${externalList.name}`,
+      );
       if (created) {
-        createdCount += 1;
+        createdLocal += 1;
       } else {
-        failedCount += 1;
+        failed += 1;
       }
     }
 
+    this.logger.log('Starting local -> external sync phase');
+
+    for (const localList of localLists) {
+      const externalList = externalLists.find(
+        (candidate) => candidate.name === localList.name,
+      );
+
+      let targetExternalList = externalList;
+
+      if (!targetExternalList) {
+        const created = await this.tryExecuteWithRetry(
+          () =>
+            this.externalTodoApiService.createTodoList({
+              name: localList.name,
+            }),
+          `create external list ${localList.name}`,
+        );
+        if (created) {
+          createdExternal += 1;
+          targetExternalList = created;
+          externalLists.push(targetExternalList);
+        } else {
+          failed += 1;
+          continue;
+        }
+      }
+
+      if (
+        targetExternalList.id &&
+        targetExternalList.name !== localList.name
+      ) {
+        const updated = await this.tryExecuteWithRetry(
+          () =>
+            this.externalTodoApiService.updateTodoList(targetExternalList.id, {
+              name: localList.name,
+            }),
+          `update external list ${targetExternalList.id}`,
+        );
+        if (updated) {
+          updatedExternal += 1;
+          targetExternalList = updated;
+        } else {
+          failed += 1;
+        }
+      }
+
+      const externalItems: any[] = Array.isArray(targetExternalList.items)
+        ? targetExternalList.items
+        : [];
+      let processedItems = 0;
+
+      for (const localItem of localList.items ?? []) {
+        const matchingExternalItem = externalItems.find(
+          (externalItem) => externalItem.description === localItem.name,
+        );
+
+        if (!matchingExternalItem) {
+          const created = await this.tryExecuteWithRetry(
+            () =>
+              this.externalTodoApiService.createTodoItem(targetExternalList.id, {
+                description: localItem.name,
+                completed: localItem.completed,
+              }),
+            `create external item ${localItem.name} for list ${localList.name}`,
+          );
+          if (created) {
+            createdExternal += 1;
+            externalItems.push(created);
+          } else {
+            failed += 1;
+          }
+        } else if (
+          matchingExternalItem.completed !== localItem.completed ||
+          matchingExternalItem.description !== localItem.name
+        ) {
+          const updated = await this.tryExecuteWithRetry(
+            () =>
+              this.externalTodoApiService.updateTodoItem(
+                targetExternalList.id,
+                matchingExternalItem.id,
+                {
+                  description: localItem.name,
+                  completed: localItem.completed,
+                },
+              ),
+            `update external item ${matchingExternalItem.id} for list ${localList.name}`,
+          );
+          if (updated) {
+            updatedExternal += 1;
+          } else {
+            failed += 1;
+          }
+        }
+
+        processedItems += 1;
+      }
+
+      this.logger.log(
+        `Processed ${processedItems} items for local list ${localList.name}`,
+      );
+    }
+
     this.logger.log(
-      `Sync completed: created=${createdCount}, failed=${failedCount}`,
+      `Sync completed: createdLocal=${createdLocal}, createdExternal=${createdExternal}, updatedExternal=${updatedExternal}, failed=${failed}`,
     );
 
     return {
-      success: failedCount === 0,
-      created: createdCount,
-      failed: failedCount,
+      success: failed === 0,
+      createdLocal,
+      createdExternal,
+      updatedExternal,
+      failed,
     };
   }
 
-  private async tryCreateListWithRetry(
-    todoList: TodoList,
-    listName: string,
+  private async trySaveWithRetry(
+    operation: () => Promise<any>,
+    operationName: string,
   ): Promise<boolean> {
     try {
-      await this.todoListRepository.save(todoList);
+      await operation();
       return true;
     } catch (error) {
       this.logger.warn(
-        `First attempt failed for list ${listName}, retrying...`,
+        `First attempt failed for ${operationName}, retrying...`,
         error instanceof Error ? error.stack : String(error),
       );
     }
 
     try {
-      await this.todoListRepository.save(todoList);
+      await operation();
       return true;
     } catch (error) {
       this.logger.error(
-        `Second attempt failed for list ${listName}`,
+        `Second attempt failed for ${operationName}`,
         error instanceof Error ? error.stack : String(error),
       );
       return false;
+    }
+  }
+
+  private async tryExecuteWithRetry<T>(
+    operation: () => Promise<T>,
+    operationName: string,
+  ): Promise<T | null> {
+    try {
+      return await operation();
+    } catch (error) {
+      this.logger.warn(
+        `First attempt failed for ${operationName}, retrying...`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
+
+    try {
+      return await operation();
+    } catch (error) {
+      this.logger.error(
+        `Second attempt failed for ${operationName}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      return null;
     }
   }
 }

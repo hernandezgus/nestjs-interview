@@ -63,7 +63,12 @@ The application allows users to manage TodoLists and nested TodoItems through a 
 
 ### Sync design
 
-Sync is implemented as a one-way import from the external API into the local database. The backend fetches all remote TodoLists, compares by list name, and creates missing local lists with associated items.
+Sync is implemented as a bidirectional, best-effort synchronization:
+
+- External → Local: imports missing lists and items
+- Local → External: propagates new and updated data
+
+Due to external API limitations (no shared IDs, no timestamps), matching is performed by name and may not be perfectly consistent.
 
 ## Running the project
 
@@ -157,6 +162,8 @@ The backend sync service fetches TodoLists from the external API and compares th
 - Sync is one-way from external API to local database
 - The external API does not support incremental delta queries or full change tracking
 - Conflict resolution is intentionally simple to keep the implementation focused and maintainable
+- The frontend build may emit a Vite warning about chunks larger than 500 kB after minification; the build itself still succeeds and this is a known optimization area not addressed due to time constraints
+- The external service is expected to be available at `http://localhost:3001` and the implementation is based on the `challenge-senior-engineer` OpenAPI documentation, but no runnable external server is included in this repository and therefore the sync flow could not be end-to-end tested against a real external service. The sync behavior is covered by unit tests `should create local lists from external service` and `should propagate local list and item creation to external service`.
 
 ## AI-First Development Approach
 
