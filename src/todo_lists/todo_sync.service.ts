@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { ExternalTodoApiService } from './external_todo_api.service';
 import { TodoItem } from './todo_item.entity';
 import { TodoList } from './todo_list.entity';
+import { TodoSyncConfigService } from './todo_sync_config.service';
 
 @Injectable()
 export class TodoSyncService {
@@ -12,6 +13,7 @@ export class TodoSyncService {
 
   constructor(
     private readonly externalTodoApiService: ExternalTodoApiService,
+    private readonly todoSyncConfigService: TodoSyncConfigService,
     @InjectRepository(TodoList)
     private readonly todoListRepository: Repository<TodoList>,
     @InjectRepository(TodoItem)
@@ -20,8 +22,17 @@ export class TodoSyncService {
 
   @Cron('*/5 * * * *')
   async handleCron(): Promise<void> {
+    if (!this.todoSyncConfigService.isEnabled()) {
+      this.logger.log('Automatic sync skipped because auto sync is disabled');
+      return;
+    }
+
     this.logger.log('Automatic sync triggered');
     await this.syncFromExternal();
+  }
+
+  setAutoSyncEnabled(enabled: boolean): boolean {
+    return this.todoSyncConfigService.setEnabled(enabled);
   }
 
   async syncFromExternal(): Promise<{

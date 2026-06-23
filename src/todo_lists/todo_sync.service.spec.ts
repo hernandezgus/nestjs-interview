@@ -4,6 +4,7 @@ import { TodoSyncService } from './todo_sync.service';
 import { ExternalTodoApiService } from './external_todo_api.service';
 import { TodoItem } from './todo_item.entity';
 import { TodoList } from './todo_list.entity';
+import { TodoSyncConfigService } from './todo_sync_config.service';
 
 describe('TodoSyncService', () => {
   let todoSyncService: TodoSyncService;
@@ -15,6 +16,10 @@ describe('TodoSyncService', () => {
     updateTodoList: jest.Mock;
     createTodoItem: jest.Mock;
     updateTodoItem: jest.Mock;
+  };
+  let todoSyncConfigServiceMock: {
+    isEnabled: jest.Mock;
+    setEnabled: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -36,6 +41,11 @@ describe('TodoSyncService', () => {
       updateTodoItem: jest.fn(),
     };
 
+    todoSyncConfigServiceMock = {
+      isEnabled: jest.fn().mockReturnValue(true),
+      setEnabled: jest.fn().mockImplementation((value: boolean) => value),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TodoSyncService,
@@ -50,6 +60,10 @@ describe('TodoSyncService', () => {
         {
           provide: getRepositoryToken(TodoItem),
           useValue: todoItemRepositoryMock,
+        },
+        {
+          provide: TodoSyncConfigService,
+          useValue: todoSyncConfigServiceMock,
         },
       ],
     }).compile();
@@ -185,5 +199,36 @@ describe('TodoSyncService', () => {
       updatedExternal: 0,
       failed: 0,
     });
+  });
+
+  it('should disable the automatic sync when AUTO_SYNC_ENABLED is false', async () => {
+    todoSyncConfigServiceMock.isEnabled.mockReturnValue(false);
+    const cronSpy = jest.spyOn(todoSyncService, 'syncFromExternal');
+
+    await todoSyncService.handleCron();
+
+    expect(cronSpy).not.toHaveBeenCalled();
+  });
+
+  it('should execute the automatic sync when AUTO_SYNC_ENABLED is true', async () => {
+    todoSyncConfigServiceMock.isEnabled.mockReturnValue(true);
+    const cronSpy = jest.spyOn(todoSyncService, 'syncFromExternal').mockResolvedValue({
+      success: true,
+      createdLocal: 0,
+      createdExternal: 0,
+      updatedExternal: 0,
+      failed: 0,
+    });
+
+    await todoSyncService.handleCron();
+
+    expect(cronSpy).toHaveBeenCalled();
+  });
+
+  it('should update the runtime auto sync setting through the service', () => {
+    const updated = todoSyncService.setAutoSyncEnabled(false);
+
+    expect(updated).toBe(false);
+    expect(todoSyncConfigServiceMock.setEnabled).toHaveBeenCalledWith(false);
   });
 });
