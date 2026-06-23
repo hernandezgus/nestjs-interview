@@ -163,3 +163,20 @@ EXTERNAL_API_URL=http://localhost:3001
 - Introduce queue-based background sync processing
 - Improve frontend sync UX with richer progress details
 - Harden error handling and retry policies
+
+## Bulk Load Script (100,000 TodoItems)
+
+A helper SQL script is provided to populate the `todo_item` table with 100,000 items associated to a single `TodoList` id (useful for performance/load testing).
+
+- Script: `scripts/seed_todo_items.sql`
+- Inserts 100,000 rows with `name` = `Task #n`, `completed = false`, and `todoListId = 1`.
+- The script issues a `DELETE` for `todoListId = 1` before inserting, and is transactional.
+
+Run the script with `psql` (ensure your environment variables are set):
+
+```bash
+psql -h $DB_HOST -p $DB_PORT -U $DB_USERNAME -d $DB_DATABASE -f scripts/seed_todo_items.sql
+```
+
+Notes:
+- The test `src/todo_lists/seed_todo_items.spec.ts` executes the script and verifies the inserted count. It requires a running Postgres instance configured via environment variables (`DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`). If the database is not available, the test will be skipped.
