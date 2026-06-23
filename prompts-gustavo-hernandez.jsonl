@@ -37,4 +37,5 @@
 {"role":"user","content":"Generate a professional README.md describing architecture, features, sync strategy, trade-offs, and AI-first development approach."}
 
 {"role":"user","content":"Reconstruct all prompts used during development grouped by stages: backend setup, validation, logging, auth, domain, frontend, UI, and sync features."}
+{"role":"user","content":"Optimize React UI rendering for very large TodoItem lists using react-window virtualization. Document integration in README-Gustavo-Hernandez.md, add a row renderer example, and add React Testing Library tests for visible item rendering, scrolling, and stable performance."}
 {"role":"user","content":"Add scripts/seed_todo_items.sql: psql-compatible SQL that deletes existing todo items for todoListId=1 and inserts 100000 items using generate_series, name 'Task #n', completed=false. Include a Jest integration test src/todo_lists/seed_todo_items.spec.ts that runs the script and asserts count 100000 (skips if DB unavailable)."}
