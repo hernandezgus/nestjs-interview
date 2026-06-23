@@ -36,4 +36,10 @@
 
 {"role":"user","content":"Generate a professional README.md describing architecture, features, sync strategy, trade-offs, and AI-first development approach."}
 
-{"role":"user","content":"Reconstruct all prompts used during development grouped by stages: backend setup, validation, logging, auth, domain, frontend, UI, and sync features."}
+{"role":"user","content":"Implement backend endpoint POST /api/todolists/:todoListId/complete-all in NestJS. Use bulk UPDATE SQL to mark completed=true for all pending items in the list. Add retries with up to 2 attempts and return { success, totalUpdated, failedRetries }. Include Jest tests for small list, large list (100k), transient failure retries, and NotFoundException for missing list. Update README-Gustavo-Hernandez.md and prompts-gustavo-hernandez.jsonl."}
+
+{"role":"user","content":"Add configuration to enable/disable automatic sync in NestJS. Create AUTO_SYNC_ENABLED env var (default false). Modify sync service: if false, skip cron job; if true, run every 5 minutes. Add protected endpoint PUT /api/config/sync with body { enabled: true|false } to update config dynamically and return { autoSyncEnabled }. Add Jest tests for both states and endpoint behavior. Update README-Gustavo-Hernandez.md and prompts-gustavo-hernandez.jsonl."}
+
+{"role":"user","content":"Extend React + Vite frontend with a 'Complete All' button in TodoList view. On click, call POST /api/todolists/:id/complete-all. Show progress bar/spinner simulating real-time updates (e.g., every 1000 items). Display messages: 'Procesando...', 'X de Y completados', 'Retries en curso', 'Completado con éxito'. Handle errors with clear messages. Implement virtualized rendering using react-window for lists >100k items. Add React Testing Library tests for button render, progress simulation, and error handling. Update README-Gustavo-Hernandez.md and prompts-gustavo-hernandez.jsonl."}
+
+{"role":"user","content":"Finalize UI optimization for very large TodoItem lists. Ensure react-window virtualization is correctly integrated in TodoItemList.tsx. Document integration in README-Gustavo-Hernandez.md with rowRenderer example. Add React Testing Library tests to validate visible item rendering only, correct scrolling with 100k items, and stable performance. Update prompts-gustavo-hernandez.jsonl with description of this optimization."}

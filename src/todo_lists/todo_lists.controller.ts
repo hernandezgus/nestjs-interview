@@ -52,6 +52,13 @@ export class TodoListsController {
     return this.todoSyncService.syncFromExternal();
   }
 
+  @Post('/:todoListId/complete-all')
+  async completeAll(
+    @Param('todoListId', ParseIntPipe) todoListId: number,
+  ): Promise<{ success: boolean; totalUpdated: number; failedRetries: number }> {
+    return this.todoListsService.completeAll(todoListId);
+  }
+
   @Put('/:todoListId')
   update(
     @Param('todoListId', ParseIntPipe) todoListId: number,

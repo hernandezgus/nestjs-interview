@@ -71,6 +71,58 @@ export class TodoListsService {
     return await this.todoListRepository.save(todoList);
   }
 
+  async completeAll(
+    todoListId: number,
+  ): Promise<{ success: boolean; totalUpdated: number; failedRetries: number }> {
+    const listExists = await this.todoListRepository.exist({ where: { id: todoListId } });
+    if (!listExists) {
+      throw new NotFoundException(`Todo list ${todoListId} not found`);
+    }
+
+    const maxRetries = 2;
+    let failedRetries = 0;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await this.todoItemRepository
+          .createQueryBuilder()
+          .update(TodoItem)
+          .set({ completed: true })
+          .where('todoListId = :todoListId AND completed = false', {
+            todoListId,
+          })
+          .execute();
+
+        return {
+          success: true,
+          totalUpdated: Number(result.affected ?? 0),
+          failedRetries,
+        };
+      } catch (error) {
+        if (attempt === maxRetries) {
+          return {
+            success: false,
+            totalUpdated: 0,
+            failedRetries,
+          };
+        }
+
+        failedRetries += 1;
+        await this.delay(10 * failedRetries);
+      }
+    }
+
+    return {
+      success: false,
+      totalUpdated: 0,
+      failedRetries,
+    };
+  }
+
+  private async delay(milliseconds: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
+  }
+
   async delete(id: number): Promise<void> {
     const deleteResult = await this.todoListRepository.delete(id);
 
